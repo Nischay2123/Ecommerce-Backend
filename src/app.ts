@@ -12,8 +12,6 @@ import productRoute from "./Routes/products.routes.js";
 import orederRoute from "./Routes/order.routes.js";
 import paymentRoute from "./Routes/payment.routes.js";
 import dashboardRoute from "./Routes/stats.routes.js";
-import Stripe from "stripe";
-
 config({
     path:"./.env"
 })
@@ -21,11 +19,9 @@ config({
 
 const port = process.env.PORT||3000;
 const mongoURI =process.env.MONGO_URI || "";
-const stripeKey = process.env.STRIPE_KEY||"";
 
 connectDB(mongoURI)
 
-export const stripe = new Stripe(stripeKey)
 export const myCache =new Nodecache()
 const app = express();
 app.use(express.json())
