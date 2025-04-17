@@ -1,10 +1,10 @@
 import express from "express"
-import{allCoupon, applyDiscount, createPaymentIntent, deleteCoupon, newCoupon} from "../controllers/payment.controller.js"
+import{allCoupon, applyDiscount, deleteCoupon, newCoupon} from "../controllers/payment.controller.js"
 import { adminOnly } from "../Middlewares/auth.middlerware.js"
 const app = express()
 
 // route /api/v1/payment/create
-app.post("/create",createPaymentIntent)
+// app.post("/create",()=>{})
 
 // route /api/v1/payment/discount
 app.get("/discount",applyDiscount)
