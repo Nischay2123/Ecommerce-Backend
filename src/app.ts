@@ -1,8 +1,8 @@
 import express  from "express"
+import { config } from "dotenv";
 import { connectDB } from "./Utils/features.utils.js";
 import { errorMiddlerware } from "./Middlewares/error.middleware.js";
 import Nodecache from "node-cache"
-import { config } from "dotenv";
 import morgan from 'morgan'
 import cors from "cors";
 

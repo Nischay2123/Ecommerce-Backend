@@ -10,6 +10,8 @@ import ErrorHandler from "../Utils/utility-class.js";
 import { rm } from "fs";
 import { myCache } from "../app.js";
 import { invalidateCache } from "../Utils/features.utils.js";
+import { v2 as cloudinary } from "cloudinary";
+import uploadPhoto from "../Utils/cloudinary.utils.js";
 
 
 // revalidate non new,update,delete Product & on New order
@@ -75,38 +77,55 @@ export const getSingleProduct = TryCatch(async (req: Request, res, next) => {
   });
 });
 
-export const newProduct = TryCatch(
-    async (req: Request<{}, {}, NewProductRequestBody>, res, next) => {
-      const { name, category, stock, price } = req.body;
-      const photo = req.file;
-  
-      if (!photo) {
-        return next(new ErrorHandler("please add photo", 400));
-      }
-  
-      if (!name || !category || !stock || !price) {
-        rm(photo.path, () => {
-          console.log("Deleted");
-        });
-        return next(new ErrorHandler("please add all fields", 400));
-      }
-  
-      await Product.create({
-        name,
-        category: category.toLowerCase(),
-        price,
-        stock,
-        photo: photo?.path,
-      });
-      
-      invalidateCache({product:true,admin:true})
 
-      return res.status(201).json({
-        success: true,
-        message: "Product Created Successfully",
-      });
+// inside your controller:
+export const newProduct = TryCatch(
+  async (req: Request<{}, {}, NewProductRequestBody>, res, next) => {
+    // console.log("process.env.CLOUDINARY_API_KEY");
+
+    const { name, category, stock, price } = req.body;
+    const photo = req.file;
+
+    // console.log(process.env.CLOUDINARY_API_KEY);
+
+    if (!photo) {
+      return next(new ErrorHandler("please add photo", 400));
     }
-  );
+    if (!name || !category || !stock || !price) {
+      // Delete local file if other fields missing
+      rm(photo.path, () => {
+        console.log("Deleted local file due to missing fields");
+      });
+      return next(new ErrorHandler("please add all fields", 400));
+    }
+
+    
+    const result = await uploadPhoto(photo.path)
+    
+
+    rm(photo.path, () => {
+      console.log("Deleted local file after upload");
+    });
+
+    // Create product with cloudinary URL
+    await Product.create({
+      name,
+      category: category.toLowerCase(),
+      price,
+      stock,
+      photo: result,
+    });
+
+    invalidateCache({ product: true, admin: true });
+
+    return res.status(201).json({
+      success: true,
+      message: "Product Created Successfully",
+      photoUrl: result,
+    });
+  }
+);
+
 
 export const updateProduct = TryCatch(async (req, res, next) => {
   const { id } = req.params;
@@ -124,9 +143,11 @@ export const updateProduct = TryCatch(async (req, res, next) => {
     rm(product.photo!, () => {
       console.log("Old Photo Deleted");
     });
-    product.photo = photo.path;
+    const result = await uploadPhoto(photo.path)
+    product.photo = result;
   }
 
+  
   if (name) product.name = name;
   if (price) product.price = price;
   if (stock) product.stock = stock;
